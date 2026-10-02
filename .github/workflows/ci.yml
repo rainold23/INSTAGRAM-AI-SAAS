@@ -16,4 +16,5 @@ jobs:
           cache: npm
       - run: npm install
       - run: npx prisma generate
+      - run: npx tsc --noEmit
       - run: npx next build

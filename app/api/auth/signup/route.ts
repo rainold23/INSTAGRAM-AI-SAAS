@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (exists) return NextResponse.json({ error: "Ese email ya está registrado." }, { status: 409 });
 
     const userCount = await prisma.user.count();
-    const role = userCount === 0 ? "OWNER" : "MEMBER";
+    const role = userCount === 0 ? ("OWNER" as const) : ("MEMBER" as const);
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
     const user = await prisma.user.create({
       data: {

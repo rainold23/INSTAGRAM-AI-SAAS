@@ -12,6 +12,7 @@ import {
   Copy,
   Check,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 
 const stats = [
@@ -21,6 +22,10 @@ const stats = [
   ["AI generations", "0"],
 ];
 
+function go(path: string) {
+  window.location.assign(path);
+}
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState("");
@@ -29,7 +34,10 @@ export default function DashboardPage() {
   const [notice, setNotice] = useState("");
 
   async function generate() {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()) {
+      setNotice("Escribe una idea primero.");
+      return;
+    }
     setLoading(true);
     setNotice("");
     try {
@@ -39,23 +47,30 @@ export default function DashboardPage() {
         body: JSON.stringify({ prompt }),
       });
       const d = await r.json();
-      setResult(d.content || d.error || "No result");
-      if (d.demo) setNotice("Demo mode: add OPENAI_API_KEY in Vercel to enable live AI.");
-    } catch {
-      setNotice("Could not reach the AI service.");
+      if (!r.ok) throw new Error(d.error || "No se pudo generar contenido.");
+      setResult(d.content || "No result");
+      if (d.demo) setNotice("Modo demo: agrega OPENAI_API_KEY en Vercel para activar IA real.");
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "No se pudo conectar con la IA.");
     } finally {
       setLoading(false);
     }
   }
 
   async function connect() {
-    const r = await fetch("/api/instagram/connect");
-    const d = await r.json();
-    if (d.url) window.location.href = d.url;
-    else setNotice(d.error || "Instagram connection is not configured yet.");
+    setNotice("");
+    try {
+      const r = await fetch("/api/instagram/connect", { cache: "no-store" });
+      const d = await r.json();
+      if (d.url) window.location.assign(d.url);
+      else setNotice(d.error || "Instagram todavía no está configurado.");
+    } catch {
+      setNotice("No se pudo iniciar la conexión con Instagram.");
+    }
   }
 
   async function copy() {
+    if (!result) return;
     await navigator.clipboard.writeText(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
@@ -65,17 +80,17 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-[#08090d]">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <a href="/" className="font-semibold">Instagram AI</a>
+          <button onClick={() => go("/")} className="font-semibold">Instagram AI</button>
           <nav className="hidden gap-5 text-sm text-white/50 md:flex">
-            <a href="/dashboard" className="text-white">Dashboard</a>
-            <a href="/content">Content</a>
-            <a href="/calendar">Calendar</a>
-            <a href="/analytics">Analytics</a>
-            <a href="/billing">Billing</a>
+            <button onClick={() => go("/dashboard")} className="text-white">Dashboard</button>
+            <button onClick={() => go("/content")}>Content</button>
+            <button onClick={() => go("/calendar")}>Calendar</button>
+            <button onClick={() => go("/analytics")}>Analytics</button>
+            <button onClick={() => go("/billing")}>Billing</button>
           </nav>
-          <a href="/login" className="flex items-center gap-2 text-sm text-white/50">
+          <button onClick={() => go("/login")} className="flex items-center gap-2 text-sm text-white/50">
             <LogOut size={16} /> Sign out
-          </a>
+          </button>
         </div>
       </header>
 
@@ -128,11 +143,11 @@ export default function DashboardPage() {
           <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6">
             <h2 className="font-semibold">Quick actions</h2>
             <div className="mt-4 space-y-3">
-              <a href="/content" className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 hover:bg-white/5"><Plus size={18} /> New content</a>
-              <a href="/calendar" className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 hover:bg-white/5"><CalendarDays size={18} /> Content calendar</a>
-              <a href="/analytics" className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 hover:bg-white/5"><BarChart3 size={18} /> View analytics</a>
-              <a href="/billing" className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 hover:bg-white/5">💳 Billing</a>
-              <button className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><Settings size={18} /> Workspace settings</button>
+              <button onClick={() => go("/content")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><Plus size={18} /> New content</button>
+              <button onClick={() => go("/calendar")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><CalendarDays size={18} /> Content calendar</button>
+              <button onClick={() => go("/analytics")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><BarChart3 size={18} /> View analytics</button>
+              <button onClick={() => go("/billing")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><CreditCard size={18} /> Billing</button>
+              <button onClick={() => setNotice("Workspace settings estará disponible en la siguiente versión.")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 p-4 text-left hover:bg-white/5"><Settings size={18} /> Workspace settings</button>
             </div>
           </section>
         </div>

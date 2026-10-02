@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     scheduledAt = new Date(body.scheduledAt);
     if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) return NextResponse.json({ error: "La fecha programada no es válida." }, { status: 400 });
   }
-  const content = await prisma.content.create({ data: { workspaceId: membership.workspaceId, userId: session.user.id, title: typeof body.title === "string" && body.title.trim() ? body.title.trim().slice(0, 120) : "Instagram post", body: body.body.trim(), status: scheduledAt ? "SCHEDULED" : "DRAFT", scheduledAt } });
+  const mediaUrl = typeof body.mediaUrl === "string" && body.mediaUrl.trim() ? body.mediaUrl.trim().slice(0, 2000) : null;
+  const content = await prisma.content.create({ data: { workspaceId: membership.workspaceId, userId: session.user.id, title: typeof body.title === "string" && body.title.trim() ? body.title.trim().slice(0, 120) : "Instagram post", body: body.body.trim(), mediaUrl, status: scheduledAt ? "SCHEDULED" : "DRAFT", scheduledAt } });
   return NextResponse.json({ ok: true, content });
 }

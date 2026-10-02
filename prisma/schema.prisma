@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String?
+  email        String        @unique
+  passwordHash String
+  role         Role          @default(MEMBER)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  memberships  Membership[]
+  instagram    InstagramAccount[]
+  content      Content[]
+  usage        UsageEvent[]
+}
+
+model Workspace {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  plan        String       @default("free")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  instagram   InstagramAccount[]
+  content     Content[]
+  subscription Subscription?
+}
+
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role      @default(MEMBER)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@unique([userId, workspaceId])
+}
+
+model InstagramAccount {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  userId        String
+  instagramId   String?
+  username      String?
+  accessToken   String?
+  tokenExpiresAt DateTime?
+  connected     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Content {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String
+  body        String
+  mediaUrl    String?
+  status      ContentStatus @default(DRAFT)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  workspaceId          String    @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?   @unique
+  status               String    @default("inactive")
+  plan                 String    @default("free")
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model UsageEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String?
+  type        String
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

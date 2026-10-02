@@ -1,0 +1,2 @@
+import { NextResponse } from "next/server";
+export async function GET(req:Request){const url=new URL(req.url);const code=url.searchParams.get("code");const error=url.searchParams.get("error");if(error)return NextResponse.redirect(new URL("/dashboard?instagram=denied",url));if(!code)return NextResponse.redirect(new URL("/dashboard?instagram=missing_code",url));return NextResponse.redirect(new URL("/dashboard?instagram=connected_pending",url));}
